@@ -83,6 +83,7 @@ class NetworkCapture:
         else:
             self.dom = etree.ElementTree(etree.fromstring(xml_blob))
         
+        
     def get_content_size(self):  # total kb passed through the proxy  
         byte_sizes = []
         for child in self.dom.getiterator():
@@ -91,12 +92,14 @@ class NetworkCapture:
         total_size = sum([int(bytes) for bytes in byte_sizes]) / 1000.0
         return total_size
     
+    
     def get_num_requests(self):
         num_requests = 0
         for child in self.dom.getiterator():
             if child.tag == 'entry':
                 num_requests += 1
         return num_requests
+    
     
     def get_http_status_codes(self):       
         status_map = {}
@@ -108,6 +111,7 @@ class NetworkCapture:
                     status_map[child.attrib.get('statusCode')] = 1
         return status_map
     
+    
     def get_http_times(self):
         http_timings = []
         for child in self.dom.getiterator():
@@ -118,6 +122,7 @@ class NetworkCapture:
                     child.attrib.get('end')))
         http_timings.sort(cmp=lambda x,y: cmp(x[1], y[1])) # sort by start time
         return http_timings
+        
         
     def get_network_times(self):
         timings = []
@@ -134,6 +139,7 @@ class NetworkCapture:
         end_first_request = self.convert_time(end_times[0])
         end_last_request = self.convert_time(end_times[-1])
         return (start_first_request, end_first_request, end_last_request)
+        
         
     def convert_time(self, date_string):
         if '-' in date_string: split_char = '-'
