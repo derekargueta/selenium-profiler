@@ -4,7 +4,6 @@
 #  License: GNU GPLv3
 
 
-
 from selenium import selenium
 from datetime import datetime
 import socket
@@ -14,8 +13,14 @@ import xml.etree.ElementTree as etree
 
 
 
+SITE = 'http://www.google.com/'
+PATH = '/'
+BROWSER = '*firefox'
+
+
+
 def main():
-    sel = selenium('localhost', 4444, '*firefox', 'http://www.amazon.com/')
+    sel = selenium('localhost', 4444, BROWSER, SITE)
     
     try:
         sel.start()
@@ -25,7 +30,7 @@ def main():
     
     time.sleep(1)
     
-    sel.open('/')
+    sel.open(PATH)
     sel.wait_for_page_to_load(10000)   
     end_loading = datetime.now()
     
