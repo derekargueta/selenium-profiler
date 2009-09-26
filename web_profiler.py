@@ -70,7 +70,7 @@ def main():
     print '%s secs (network: end first request)' % end_first_request_elapsed
     print '\nhttp timing detail:'
     for timing in http_timings:
-        print '%s,%s,%s' % (timing[0], timing[1], timing[2])
+        print '%s,%s,%s,%s' % (timing[0], timing[1], timing[2], timing[3])
 
   
   
@@ -121,11 +121,14 @@ class NetworkCapture:
         http_timings = []
         for child in self.dom.getiterator():
             if child.tag == 'entry':
+                url = child.attrib.get('url') + '?'
+                url_stem = url.split('?')[0]
                 http_timings.append((
+                    url_stem,
                     child.attrib.get('timeInMillis'),
                     child.attrib.get('start'),
                     child.attrib.get('end')))
-        http_timings.sort(cmp=lambda x,y: cmp(x[1], y[1])) # sort by start time
+        http_timings.sort(cmp=lambda x,y: cmp(x[2], y[2])) # sort by start time
         return http_timings
         
         
