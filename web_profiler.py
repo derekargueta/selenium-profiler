@@ -52,6 +52,7 @@ def main():
     num_requests = nc.get_num_requests()
     total_size = nc.get_content_size()
     status_map = nc.get_http_status_codes()
+    file_extension_map = nc.get_file_extensions()
     http_timings = nc.get_http_times()
     start_first_request, end_first_request, end_last_request = nc.get_network_times()
     
@@ -64,19 +65,25 @@ def main():
     print 'http requests: %s' % num_requests
     for k,v in sorted(status_map.items()):
         print 'status %s: %s' % (k, v)
+    
     print '\nprofiler timing:'
     print '%s secs (page load)' % end_load_elapsed
     print '%s secs (network: end last request)' % end_last_request_elapsed
     print '%s secs (network: end first request)' % end_first_request_elapsed
+    
+    print '\nfile extensions:'
+    for k,v in sorted(file_extension_map.items()):
+        print '%s: %s' % (k, v)
+        
     print '\nhttp timing detail:'
     for timing in http_timings:
         print '%s,%s,%s,%s' % (timing[0], timing[1], timing[2], timing[3])
 
   
   
-def get_elapsed_secs(dt_start, dt):
-    return float('%.3f' % ((dt - dt_start).seconds + 
-        ((dt - dt_start).microseconds / 1000000.0)))
+def get_elapsed_secs(dt_start, dt_end):
+    return float('%.3f' % ((dt_end - dt_start).seconds + 
+        ((dt_end - dt_start).microseconds / 1000000.0)))
  
  
  
@@ -130,6 +137,27 @@ class NetworkCapture:
                     child.attrib.get('end')))
         http_timings.sort(cmp=lambda x,y: cmp(x[2], y[2])) # sort by start time
         return http_timings
+        
+        
+    def get_file_extensions(self):
+        file_extension_map = {}
+        for child in self.dom.getiterator():
+            if child.tag == 'entry':
+                url = child.attrib.get('url') + '?'
+                url_stem = url.split('?')[0]
+                doc = url_stem.split('/')[-1]
+                if '.' in doc:
+                    file_extension = doc.split('.')[-1]
+                    try:
+                        file_extension_map[file_extension] += 1
+                    except KeyError:
+                        file_extension_map[file_extension] = 1
+                else:
+                    try:
+                        file_extension_map['unknown'] += 1
+                    except KeyError:
+                        file_extension_map['unknown'] = 1
+        return file_extension_map
         
         
     def get_network_times(self):
