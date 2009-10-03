@@ -7,10 +7,10 @@
 
 from selenium import selenium
 from datetime import datetime
+import xml.etree.ElementTree as etree
 import socket
 import sys
 import time
-import xml.etree.ElementTree as etree
 
 
 
@@ -79,7 +79,7 @@ def main():
         
     print '\nhttp timing detail:'
     for timing in http_timings:
-        print '%s,%i,%s,%s' % (timing[0], timing[1], timing[2], timing[3])
+        print '%s,%i ms' % (timing[0], timing[1])
 
   
   
@@ -133,16 +133,8 @@ class NetworkCapture:
                 url = child.attrib.get('url') + '?'
                 url_stem = url.split('?')[0]
                 doc = '/' + url_stem.split('/')[-1]
-                if '-' in child.attrib.get('start'): split_char = '-'
-                else: split_char = '+' 
-                start = child.attrib.get('start').split('T')[1].split(split_char)[0]
-                end = child.attrib.get('end').split('T')[1].split(split_char)[0]
-                http_timings.append((
-                    doc,
-                    int(child.attrib.get('timeInMillis')),
-                    start,
-                    end))
-        http_timings.sort(cmp=lambda x,y: cmp(x[2], y[2])) # sort by start time
+                http_timings.append((doc, int(child.attrib.get('timeInMillis'))))
+        http_timings.sort(cmp=lambda x,y: cmp(x[1], y[1])) # sort by time
         return http_timings
         
         
