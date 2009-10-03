@@ -4,6 +4,7 @@
 #  License: GNU GPLv3
 
 
+
 from selenium import selenium
 from datetime import datetime
 import socket
@@ -52,7 +53,7 @@ def main():
     num_requests = nc.get_num_requests()
     total_size = nc.get_content_size()
     status_map = nc.get_http_status_codes()
-    file_extension_map = nc.get_file_extensions()
+    file_extension_map = nc.get_file_extension_stats()
     http_timings = nc.get_http_times()
     start_first_request, end_first_request, end_last_request = nc.get_network_times()
     
@@ -62,22 +63,23 @@ def main():
     
     print '--------------------------------'
     print 'content size: %s kb' % total_size
-    print 'http requests: %s' % num_requests
+    
+    print '\nhttp requests: %s' % num_requests
     for k,v in sorted(status_map.items()):
         print 'status %s: %s' % (k, v)
     
     print '\nprofiler timing:'
-    print '%s secs (page load)' % end_load_elapsed
-    print '%s secs (network: end last request)' % end_last_request_elapsed
-    print '%s secs (network: end first request)' % end_first_request_elapsed
+    print '%.3f secs (page load)' % end_load_elapsed
+    print '%.3f secs (network: end last request)' % end_last_request_elapsed
+    print '%.3f secs (network: end first request)' % end_first_request_elapsed
     
-    print '\nfile extensions:'
+    print '\nfile extensions: (count, size)'
     for k,v in sorted(file_extension_map.items()):
-        print '%s: %s' % (k, v)
+        print '%s: %i, %.3f kb' % (k, v[0], v[1])
         
     print '\nhttp timing detail:'
     for timing in http_timings:
-        print '%s,%s,%s,%s' % (timing[0], timing[1], timing[2], timing[3])
+        print '%s,%i,%s,%s' % (timing[0], timing[1], timing[2], timing[3])
 
   
   
@@ -130,33 +132,37 @@ class NetworkCapture:
             if child.tag == 'entry':
                 url = child.attrib.get('url') + '?'
                 url_stem = url.split('?')[0]
+                doc = '/' + url_stem.split('/')[-1]
+                if '-' in child.attrib.get('start'): split_char = '-'
+                else: split_char = '+' 
+                start = child.attrib.get('start').split('T')[1].split(split_char)[0]
+                end = child.attrib.get('end').split('T')[1].split(split_char)[0]
                 http_timings.append((
-                    url_stem,
-                    child.attrib.get('timeInMillis'),
-                    child.attrib.get('start'),
-                    child.attrib.get('end')))
+                    doc,
+                    int(child.attrib.get('timeInMillis')),
+                    start,
+                    end))
         http_timings.sort(cmp=lambda x,y: cmp(x[2], y[2])) # sort by start time
         return http_timings
         
         
-    def get_file_extensions(self):
-        file_extension_map = {}
+    def get_file_extension_stats(self):
+        file_extension_map = {}  # k=extension v=(count,size) 
         for child in self.dom.getiterator():
             if child.tag == 'entry':
+                size = float(child.attrib.get('bytes')) / 1000.0
                 url = child.attrib.get('url') + '?'
                 url_stem = url.split('?')[0]
                 doc = url_stem.split('/')[-1]
                 if '.' in doc:
                     file_extension = doc.split('.')[-1]
-                    try:
-                        file_extension_map[file_extension] += 1
-                    except KeyError:
-                        file_extension_map[file_extension] = 1
                 else:
-                    try:
-                        file_extension_map['unknown'] += 1
-                    except KeyError:
-                        file_extension_map['unknown'] = 1
+                    file_extension = 'unknown'
+                try:
+                    file_extension_map[file_extension][0] += 1
+                    file_extension_map[file_extension][1] += size
+                except KeyError:
+                    file_extension_map[file_extension] = [1, size]
         return file_extension_map
         
         
