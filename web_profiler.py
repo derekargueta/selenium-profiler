@@ -62,7 +62,9 @@ def main():
     end_first_request_elapsed = get_elapsed_secs(start_first_request, end_first_request)
     
     print '--------------------------------'
-    print 'content size: %s kb' % total_size
+    print 'results for %s' % SITE
+    
+    print '\ncontent size: %s kb' % total_size
     
     print '\nhttp requests: %s' % num_requests
     for k,v in sorted(status_map.items()):
