@@ -81,7 +81,7 @@ def main():
         
     print '\nhttp timing detail:'
     for timing in http_timings:
-        print '%s,%i ms' % (timing[0], timing[1])
+        print '%i, %s, %s, %i ms' % (timing[0], timing[1], timing[2], timing[3])
 
   
   
@@ -135,7 +135,10 @@ class NetworkCapture:
                 url = child.attrib.get('url') + '?'
                 url_stem = url.split('?')[0]
                 doc = '/' + url_stem.split('/')[-1]
-                http_timings.append((doc, int(child.attrib.get('timeInMillis'))))
+                status = int(child.attrib.get('statusCode'))
+                method = child.attrib.get('method').replace("'", '')
+                time = int(child.attrib.get('timeInMillis'))
+                http_timings.append((status, method, doc, time))
         http_timings.sort(cmp=lambda x,y: cmp(x[1], y[1])) # sort by time
         return http_timings
         
