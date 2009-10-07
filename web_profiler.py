@@ -54,7 +54,7 @@ def main():
     total_size = nc.get_content_size()
     status_map = nc.get_http_status_codes()
     file_extension_map = nc.get_file_extension_stats()
-    http_timings = nc.get_http_times()
+    http_details = nc.get_http_details()
     start_first_request, end_first_request, end_last_request = nc.get_network_times()
     
     end_load_elapsed = get_elapsed_secs(start_first_request, end_loading)
@@ -79,9 +79,9 @@ def main():
     for k,v in sorted(file_extension_map.items()):
         print '%s: %i, %.3f kb' % (k, v[0], v[1])
         
-    print '\nhttp timing detail:'
-    for timing in http_timings:
-        print '%i, %s, %s, %i ms' % (timing[0], timing[1], timing[2], timing[3])
+    print '\nhttp timing detail: (status, method, doc, size, time)'
+    for details in http_details:
+        print '%i, %s, %s, %i, %i ms' % (details[0], details[1], details[2], details[3], details[4])
 
   
   
@@ -128,8 +128,8 @@ class NetworkCapture:
         return status_map
     
     
-    def get_http_times(self):
-        http_timings = []
+    def get_http_details(self):
+        http_details = []
         for child in self.dom.getiterator():
             if child.tag == 'entry':
                 url = child.attrib.get('url') + '?'
@@ -138,9 +138,10 @@ class NetworkCapture:
                 status = int(child.attrib.get('statusCode'))
                 method = child.attrib.get('method').replace("'", '')
                 time = int(child.attrib.get('timeInMillis'))
-                http_timings.append((status, method, doc, time))
-        http_timings.sort(cmp=lambda x,y: cmp(x[1], y[1])) # sort by time
-        return http_timings
+                size = int(child.attrib.get('bytes'))
+                http_details.append((status, method, doc, size, time))
+        http_details.sort(cmp=lambda x,y: cmp(x[3], y[3])) # sort by size
+        return http_details
         
         
     def get_file_extension_stats(self):
