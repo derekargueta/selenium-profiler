@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#
 #  Selenium-RC Web/HTTP Profiler
 #  Copyright (c) 2009 Corey Goldberg (corey@goldb.org)
 #  License: GNU GPLv3
