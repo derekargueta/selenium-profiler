@@ -12,17 +12,34 @@ import xml.etree.ElementTree as etree
 import socket
 import sys
 import time
-
-
-
-SITE = 'http://www.google.com/'
-PATH = '/'
-BROWSER = '*firefox'
+import urlparse
 
 
 
 def main():
-    sel = selenium('localhost', 4444, BROWSER, SITE)
+    if len(sys.argv) < 2:
+        print 'usage:\nweb_profiler.py <url> [browser_launcher]'
+        print 'example:\nweb_profiler.py http://www.google.com/ *firefox\n'
+        sys.exit(1)
+    else:
+        url = sys.argv[1]
+        if not url.startswith('http'):
+            url = 'http://' + url
+        parsed_url = urlparse.urlparse(url)
+        site = parsed_url.scheme + '://' + parsed_url.netloc
+        path = parsed_url.path
+        if path == '':
+            path = '/'
+        browser = '*firefox'
+    if len(sys.argv) == 3:
+        browser = sys.argv[2]
+        
+    run(site, path, browser)
+
+
+        
+def run(site, path, browser):
+    sel = selenium('localhost', 4444, browser, site)
     
     try:
         sel.start()
@@ -32,7 +49,7 @@ def main():
     
     time.sleep(1)
     
-    sel.open(PATH)
+    sel.open(path)
     sel.wait_for_page_to_load(60000)   
     end_loading = datetime.now()
     
@@ -63,7 +80,7 @@ def main():
     end_first_request_elapsed = get_elapsed_secs(start_first_request, end_first_request)
     
     print '--------------------------------'
-    print 'results for %s' % SITE
+    print 'results for %s' % site
     
     print '\ncontent size: %s kb' % total_size
     
@@ -138,8 +155,8 @@ class NetworkCapture:
                 doc = '/' + url_stem.split('/')[-1]
                 status = int(child.attrib.get('statusCode'))
                 method = child.attrib.get('method').replace("'", '')
-                time = int(child.attrib.get('timeInMillis'))
                 size = int(child.attrib.get('bytes'))
+                time = int(child.attrib.get('timeInMillis'))
                 http_details.append((status, method, doc, size, time))
         http_details.sort(cmp=lambda x,y: cmp(x[3], y[3])) # sort by size
         return http_details
