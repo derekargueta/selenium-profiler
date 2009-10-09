@@ -33,7 +33,7 @@ def main():
     time.sleep(1)
     
     sel.open(PATH)
-    sel.wait_for_page_to_load(10000)   
+    sel.wait_for_page_to_load(60000)   
     end_loading = datetime.now()
     
     try:
