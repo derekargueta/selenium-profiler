@@ -1,25 +1,30 @@
 #!/usr/bin/env python
 #
-#  Selenium-RC Web/HTTP Profiler
-#  Copyright (c) 2009 Corey Goldberg (corey@goldb.org)
+#  Selenium Web/HTTP Profiler
+#  Copyright (c) 2009-2011 Corey Goldberg (corey@goldb.org)
 #  License: GNU GPLv3
 
 
 
-from selenium import selenium
-from datetime import datetime
-import xml.etree.ElementTree as etree
+import json
 import socket
 import sys
 import time
 import urlparse
+import xml.etree.ElementTree as etree
+from datetime import datetime
+
+from selenium import selenium
 
 
 
 def main():
     if len(sys.argv) < 2:
-        print 'usage:\nweb_profiler.py <url> [browser_launcher]'
-        print 'example:\nweb_profiler.py http://www.google.com/ *firefox\n'
+        print 'usage:'
+        print '  %s <url> [browser_launcher]' % __file__
+        print 'examples:'
+        print '  $ python %s www.google.com' % __file__
+        print '  $ python %s http://www.google.com/ *firefox\n' % __file__
         sys.exit(1)
     else:
         url = sys.argv[1]
@@ -31,6 +36,7 @@ def main():
         if path == '':
             path = '/'
         browser = '*firefox'
+    
     if len(sys.argv) == 3:
         browser = sys.argv[2]
         
@@ -38,36 +44,29 @@ def main():
 
 
         
-def run(site, path, browser):
-    sel = selenium('localhost', 4444, browser, site)
+def run(site, path, browser):  
+    sel = selenium('127.0.0.1', 4444, browser, site)
     
     try:
-        sel.start()
+        sel.start('captureNetworkTraffic=true')
     except socket.error:
         print 'ERROR - can not start the selenium-rc driver. is your selenium server running?'
         sys.exit(1)
-    
-    time.sleep(1)
-    
+        
     sel.open(path)
     sel.wait_for_page_to_load(60000)   
     end_loading = datetime.now()
     
-    try:
-        traffic_xml = sel.captureNetworkTraffic('xml').replace('&', '&amp;')
-    except Exception:
-        print 'ERROR - can not capture network traffic. selenium-core is buggy.'
-        sel.stop()
-        sys.exit(1)
-    
+    raw_xml = sel.captureNetworkTraffic('xml')
+                
     sel.stop()
     
-    try:
-        nc = NetworkCapture(traffic_xml)
-    except Exception:
-        print 'ERROR - did not receive traffic stats. try manually setting your browser proxy'
-        sys.exit(1)
-        
+    traffic_xml = raw_xml.replace('&', '&amp;').replace('=""GET""', '="GET"').replace('=""POST""', '="POST"') # workaround bugs in selenium 2
+    
+    nc = NetworkCapture(traffic_xml)
+    
+    json_results = nc.get_json()
+
     num_requests = nc.get_num_requests()
     total_size = nc.get_content_size()
     status_map = nc.get_http_status_codes()
@@ -109,14 +108,22 @@ def get_elapsed_secs(dt_start, dt_end):
  
  
  
-class NetworkCapture: 
+class NetworkCapture(object): 
     def __init__(self, xml_blob):
         self.xml_blob = xml_blob
-        if len(xml_blob) < 50: 
-            raise
-        else:
-            self.dom = etree.ElementTree(etree.fromstring(xml_blob))
+        self.dom = etree.ElementTree(etree.fromstring(xml_blob))
         
+    
+    def get_json(self):
+        results = []
+        for child in self.dom.getiterator():
+            if child.tag == 'entry':
+                url = child.attrib.get('url')
+                start_time = child.attrib.get('start')
+                time_in_millis = child.attrib.get('timeInMillis')
+                results.append((url, start_time, time_in_millis))
+        return json.dumps(results)               
+                
         
     def get_content_size(self):  # total kb passed through the proxy  
         byte_sizes = []
