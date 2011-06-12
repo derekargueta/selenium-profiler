@@ -65,8 +65,8 @@ def run(site, path, browser):
     
     nc = NetworkCapture(traffic_xml)
     
-    json_results = nc.get_json()
-
+    #json_results = nc.get_json()
+    
     num_requests = nc.get_num_requests()
     total_size = nc.get_content_size()
     status_map = nc.get_http_status_codes()
