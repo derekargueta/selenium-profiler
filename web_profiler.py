@@ -61,7 +61,7 @@ def run(site, path, browser):
                 
     sel.stop()
     
-    traffic_xml = raw_xml.replace('&', '&amp;').replace('=""GET""', '="GET"').replace('=""POST""', '="POST"') # workaround bugs in selenium 2
+    traffic_xml = raw_xml.replace('&', '&amp;').replace('=""GET""', '="GET"').replace('=""POST""', '="POST"') # workaround selenium bugs
     
     nc = NetworkCapture(traffic_xml)
     
